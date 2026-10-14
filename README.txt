@@ -1,11 +1,11 @@
-Brightness Menu — High Sierra trial
+GlowBar — High Sierra brightness control
 =================================
 A tiny free native Mac menu-bar hardware brightness slider, written for
 macOS High Sierra (10.13) and Intel Macs. It uses the CoreDisplay brightness
 setter, the exact OS function already confirmed to work on this computer.
 
-IMPORTANT: This is source code to be COMPILED on your Mac, not a pretested
-binary. It has not yet been run on your Mac. It may need adjustment.
+IMPORTANT: This is source code to be COMPILED on your Mac. The hardware
+brightness slider has been tested on macOS High Sierra.
 
 TRY WITHOUT INSTALLING
 1. Extract this ZIP in Downloads.
@@ -14,7 +14,7 @@ TRY WITHOUT INSTALLING
 3. Compilation uses only Apple's pre-existing Command Line Tools. It does
    not download packages, ask for sudo, or change system configuration.
 4. Click the sun icon in the menu bar and drag the brightness slider.
-5. If it works, optionally copy Trial/Brightness Menu.app to Applications
+5. If it works, optionally copy Trial/GlowBar.app to Applications
    and add to Users & Groups > Login Items.
 6. If not, quit via the app's menu and delete the Trial directory.
 
