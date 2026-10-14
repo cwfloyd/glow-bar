@@ -17,7 +17,7 @@ cp Info.plist "$APP/Contents/Info.plist"
 cp GlowBar.icns "$APP/Contents/Resources/GlowBar.icns"
 
 if ! xcrun clang -fobjc-arc -mmacosx-version-min=10.13 \
-    -framework Cocoa -framework CoreGraphics \
+    -framework Cocoa -framework CoreGraphics -framework CoreServices \
     -o "$APP/Contents/MacOS/GlowBar" main.m; then
   echo "Build failed; no app was installed."
   read -r -p "Press Return to close. " _
