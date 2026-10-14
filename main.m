@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import <CoreServices/CoreServices.h>
 #include <dlfcn.h>
 #include <math.h>
 
@@ -11,6 +12,7 @@ typedef double (*GetUserBrightnessFn)(CGDirectDisplayID);
 @property (nonatomic, strong) NSMenu *menu;
 @property (nonatomic, strong) NSSlider *slider;
 @property (nonatomic, strong) NSTextField *valueLabel;
+@property (nonatomic, strong) NSMenuItem *launchAtLoginItem;
 @property (nonatomic, assign) SetUserBrightnessFn setBrightness;
 @property (nonatomic, assign) GetUserBrightnessFn getBrightness;
 @end
@@ -70,11 +72,104 @@ typedef double (*GetUserBrightnessFn)(CGDirectDisplayID);
     sliderItem.view = view;
     [self.menu addItem:sliderItem];
     [self.menu addItem:[NSMenuItem separatorItem]];
+    self.launchAtLoginItem = [[NSMenuItem alloc] initWithTitle:@"Launch at Login" action:@selector(toggleLaunchAtLogin:) keyEquivalent:@""];
+    self.launchAtLoginItem.target = self;
+    [self.menu addItem:self.launchAtLoginItem];
+    [self.menu addItem:[NSMenuItem separatorItem]];
     NSMenuItem *quit = [[NSMenuItem alloc] initWithTitle:@"Quit GlowBar" action:@selector(terminate:) keyEquivalent:@"q"];
     quit.target = NSApp;
     [self.menu addItem:quit];
     self.statusItem.menu = self.menu;
     [self syncFromDisplay];
+}
+
+// High Sierra's native login items list (also visible in Users & Groups).
+- (BOOL)loginItemMatches:(LSSharedFileListItemRef)item {
+    CFURLRef resolvedURL = NULL;
+    OSStatus status = LSSharedFileListItemResolve(
+        item,
+        kLSSharedFileListNoUserInteraction | kLSSharedFileListDoNotMountVolumes,
+        &resolvedURL, NULL);
+    BOOL matches = NO;
+    if (status == noErr && resolvedURL) {
+        NSString *listedPath = [[(__bridge NSURL *)resolvedURL path] stringByStandardizingPath];
+        NSString *appPath = [[[NSBundle mainBundle] bundlePath] stringByStandardizingPath];
+        matches = [listedPath isEqualToString:appPath];
+    }
+    if (resolvedURL) CFRelease(resolvedURL);
+    return matches;
+}
+
+- (BOOL)launchAtLoginEnabled {
+    LSSharedFileListRef list = LSSharedFileListCreate(NULL, kLSSharedFileListSessionLoginItems, NULL);
+    if (!list) return NO;
+
+    CFArrayRef snapshot = LSSharedFileListCopySnapshot(list, NULL);
+    BOOL found = NO;
+    if (snapshot) {
+        for (CFIndex i = 0; i < CFArrayGetCount(snapshot); i++) {
+            LSSharedFileListItemRef item = (LSSharedFileListItemRef)CFArrayGetValueAtIndex(snapshot, i);
+            if ([self loginItemMatches:item]) {
+                found = YES;
+                break;
+            }
+        }
+        CFRelease(snapshot);
+    }
+    CFRelease(list);
+    return found;
+}
+
+- (void)showLoginItemError:(NSString *)message {
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = @"Unable to change login item";
+    alert.informativeText = message;
+    [alert runModal];
+}
+
+- (void)toggleLaunchAtLogin:(NSMenuItem *)sender {
+    BOOL enable = (sender.state != NSControlStateValueOn);
+    NSString *appPath = [[NSBundle mainBundle] bundlePath];
+
+    // A temporary trial build is replaced on every compile; don't register that path.
+    if (enable && [appPath rangeOfString:@"/Trial/"].location != NSNotFound) {
+        [self showLoginItemError:@"Move GlowBar.app to Applications and open that copy before enabling Launch at Login."];
+        return;
+    }
+
+    LSSharedFileListRef list = LSSharedFileListCreate(NULL, kLSSharedFileListSessionLoginItems, NULL);
+    if (!list) {
+        [self showLoginItemError:@"macOS did not make the login items list available."];
+        return;
+    }
+
+    BOOL success = YES;
+    if (enable) {
+        LSSharedFileListItemRef added = LSSharedFileListInsertItemURL(
+            list, kLSSharedFileListItemLast, CFSTR("GlowBar"), NULL,
+            (__bridge CFURLRef)[[NSBundle mainBundle] bundleURL], NULL, NULL);
+        success = (added != NULL);
+        if (added) CFRelease(added);
+    } else {
+        CFArrayRef snapshot = LSSharedFileListCopySnapshot(list, NULL);
+        if (!snapshot) {
+            success = NO;
+        } else {
+            for (CFIndex i = 0; i < CFArrayGetCount(snapshot); i++) {
+                LSSharedFileListItemRef item = (LSSharedFileListItemRef)CFArrayGetValueAtIndex(snapshot, i);
+                if ([self loginItemMatches:item] && LSSharedFileListItemRemove(list, item) != noErr)
+                    success = NO;
+            }
+            CFRelease(snapshot);
+        }
+    }
+    CFRelease(list);
+
+    BOOL current = [self launchAtLoginEnabled];
+    sender.state = current ? NSControlStateValueOn : NSControlStateValueOff;
+    if (!success || current != enable) {
+        [self showLoginItemError:@"Check System Preferences → Users & Groups → Login Items and try again."];
+    }
 }
 
 - (void)syncFromDisplay {
@@ -88,6 +183,7 @@ typedef double (*GetUserBrightnessFn)(CGDirectDisplayID);
 - (void)menuWillOpen:(NSMenu *)menu {
     (void)menu;
     [self syncFromDisplay];
+    self.launchAtLoginItem.state = [self launchAtLoginEnabled] ? NSControlStateValueOn : NSControlStateValueOff;
 }
 
 - (void)brightnessChanged:(NSSlider *)sender {
