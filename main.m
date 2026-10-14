@@ -35,9 +35,9 @@ typedef double (*GetUserBrightnessFn)(CGDirectDisplayID);
 
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     self.statusItem.button.title = @"☀";
-    self.statusItem.button.toolTip = @"Brightness — click to adjust";
+    self.statusItem.button.toolTip = @"GlowBar — click to adjust";
 
-    self.menu = [[NSMenu alloc] initWithTitle:@"Brightness"];
+    self.menu = [[NSMenu alloc] initWithTitle:@"GlowBar"];
     self.menu.delegate = self;
 
     NSMenuItem *sliderItem = [[NSMenuItem alloc] initWithTitle:@"" action:NULL keyEquivalent:@""];
@@ -70,7 +70,7 @@ typedef double (*GetUserBrightnessFn)(CGDirectDisplayID);
     sliderItem.view = view;
     [self.menu addItem:sliderItem];
     [self.menu addItem:[NSMenuItem separatorItem]];
-    NSMenuItem *quit = [[NSMenuItem alloc] initWithTitle:@"Quit Brightness Menu" action:@selector(terminate:) keyEquivalent:@"q"];
+    NSMenuItem *quit = [[NSMenuItem alloc] initWithTitle:@"Quit GlowBar" action:@selector(terminate:) keyEquivalent:@"q"];
     quit.target = NSApp;
     [self.menu addItem:quit];
     self.statusItem.menu = self.menu;
