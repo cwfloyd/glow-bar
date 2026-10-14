@@ -14,8 +14,8 @@ TRY WITHOUT INSTALLING
 3. Compilation uses only Apple's pre-existing Command Line Tools. It does
    not download packages, ask for sudo, or change system configuration.
 4. Click the sun icon in the menu bar and drag the brightness slider.
-5. If it works, optionally copy Trial/GlowBar.app to Applications
-   and add to Users & Groups > Login Items.
+5. If it works, copy Trial/GlowBar.app to Applications and launch that copy.
+   To start automatically, check "Launch at Login" in the GlowBar menu.
 6. If not, quit via the app's menu and delete the Trial directory.
 
 No network access, account, permissions, startup service or daemon.
