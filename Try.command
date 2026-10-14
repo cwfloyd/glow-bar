@@ -11,19 +11,20 @@ if ! xcode-select -p >/dev/null 2>&1; then
 fi
 
 BUILD_DIR="$PWD/Trial"
-APP="$BUILD_DIR/Brightness Menu.app"
-mkdir -p "$APP/Contents/MacOS"
+APP="$BUILD_DIR/GlowBar.app"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp Info.plist "$APP/Contents/Info.plist"
+cp GlowBar.icns "$APP/Contents/Resources/GlowBar.icns"
 
 if ! xcrun clang -fobjc-arc -mmacosx-version-min=10.13 \
     -framework Cocoa -framework CoreGraphics \
-    -o "$APP/Contents/MacOS/BrightnessMenu" main.m; then
+    -o "$APP/Contents/MacOS/GlowBar" main.m; then
   echo "Build failed; no app was installed."
   read -r -p "Press Return to close. " _
   exit 1
 fi
 
-chmod +x "$APP/Contents/MacOS/BrightnessMenu"
+chmod +x "$APP/Contents/MacOS/GlowBar"
 echo "Built trial app: $APP"
 echo "Launching — look for a sun icon in the menu bar."
 open "$APP"
